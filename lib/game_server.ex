@@ -14,41 +14,57 @@ defmodule Hello.GameServer do
         GenServer.start_link(__MODULE__, %{}, name: :game_server)
     end
 
-    def get_state do 
-        IO.puts "get_state"
+    def get_state do
         GenServer.call(:game_server, :get_state)
     end
 
     def move_player(player, dx, dy) do
-        IO.puts "move_player"
         GenServer.cast(:game_server, {:move_player, player, dx, dy} )
     end
 
+    def set_view_callback(cb) do
+        GenServer.call(:game_server, {:set_view_callback, cb})
+    end
+
     #server
-    def init(state) do 
+    def init(state) do
         IO.puts "init"
+        Process.send_after(self(), :trigger, div(1000,20))
         {:ok, state}
     end
 
+    def handle_info(:trigger , state) do
+        if Map.has_key?(state, :view_callback) do
+            state[:view_callback].(state)
+        end
+        Process.send_after(self(), :trigger, div(1000,20))
+        {:noreply, state}
+    end
+
     def handle_call(:get_state, _from, state) do
-        IO.puts "handle_call"
         {:reply, state, state}
     end
 
+    def handle_call({:set_view_callback, cb}, _from, state) do
+        if Map.has_key?(state, :view_callback) do
+            {:reply, state, state}
+        else
+            state = Map.put_new(state, :view_callback, cb)
+            {:reply, state, state}
+        end
+    end
+
+    #%{
+    #   input %{player: [x,y]}
+    #   pos %{player: [x,y]}
+    #}
     def handle_cast({:move_player, player, dx, dy}, state) do
-        IO.puts "handle_cast"
         if Map.has_key?(state, player) do
-            IO.puts "found key for " <> player
-            IO.inspect [dx,dy]
-            IO.inspect state
             [x,y] = state[player]
             state = Map.replace(state, player, [x+dx,y+dy])
-            IO.inspect state
             {:noreply, state}
         else
-            IO.puts "couldnt find key for " <> player
             state = Map.put_new(state, player, [100,100])
-            IO.inspect state
             {:noreply, state}
         end
     end

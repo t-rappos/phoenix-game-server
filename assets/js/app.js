@@ -83,17 +83,47 @@ let renderMessage = (message) => {
 }
 
 let canvas = document.getElementById("myCanvas");
+/*
 canvas.addEventListener("keypress", (e)=>{
     if(e.key==="w" || e.key ==="a" || e.key === "s" || e.key ==="d"){
         room.push("message:move", e.key);
-        console.log("keypress", e);
     }
-    
 })
+*/
+
+canvas.addEventListener("keydown",(e)=>{
+    if(e.key==="w" || e.key ==="a" || e.key === "s" || e.key ==="d"){
+        room.push("message:keydown", e.key);
+    }
+})
+
+canvas.addEventListener("keyup",(e)=>{
+    if(e.key==="w" || e.key ==="a" || e.key === "s" || e.key ==="d"){
+        room.push("message:keyup", e.key);
+    }
+})
+
 canvas.addEventListener("click", (e)=>{
-    console.log("click", e);
     room.push("message:fire", [e.offsetX, e.offsetY])
 })
 
 
 room.on("message:new", message => renderMessage(message))
+
+room.on("message:view", (message) => {
+    var canvas = document.getElementById('myCanvas');
+    if(canvas.getContext){
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,500,500);
+        for(var key in message.data){
+            var x = message.data[key][0];
+            var y = message.data[key][1];
+            ctx.fillRect(x,y,10,10)
+            ctx.fillText(key,x,y);
+        }
+       // message.data.foreach((p)=>{
+       //     console.log(p);
+       // })
+        
+    }
+})
